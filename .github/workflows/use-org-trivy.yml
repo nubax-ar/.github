@@ -1,0 +1,9 @@
+name: Use Org Trivy Scan
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  call-trivy:
+    uses: nubax-ar/.github/workflows/trivy-repo-scan.yml
