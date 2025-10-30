@@ -1,0 +1,24 @@
+# .github/workflows/trivy-repo-scan.yml
+name: Trivy - Repository Scan (org)
+
+on:
+  workflow_call: {}
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy (filesystem: deps + IaC + files)
+        uses: aquasecurity/trivy-action@v1
+        id: trivy
+        with:
+          scan-type: "fs"
+          format: "sarif"            # opcional: genera SARIF para Security tab
+          output: "trivy-results.sarif"
+          severity: "CRITICAL"
+          exit-code: "1"            # falla si encuentra CRITICAL
+          ignore-unfixed: false
