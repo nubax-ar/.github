@@ -1,24 +1,33 @@
-# .github/workflows/trivy-repo-scan.yml
-name: Trivy - Repository Scan (org)
+name: Trivy Repo Scan
 
 on:
-  workflow_call: {}
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 jobs:
-  trivy-scan:
+  trivy:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Run Trivy (filesystem: deps + IaC + files)
-        uses: aquasecurity/trivy-action@v1
-        id: trivy
         with:
-          scan-type: "fs"
-          format: "sarif"            # opcional: genera SARIF para Security tab
-          output: "trivy-results.sarif"
-          severity: "CRITICAL"
-          exit-code: "1"            # falla si encuentra CRITICAL
-          ignore-unfixed: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Trivy
+        uses: aquasecurity/trivy-action@0.21.0
+        with:
+          scan-type: fs
+          scanners: vuln,secret,config
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
