@@ -2,9 +2,8 @@ name: Install Org Trivy Workflow on New Repo
 
 on:
   repository_dispatch:
+    types: [new_repo_created]
   workflow_dispatch:
-  organization:
-    types: [created]
 
 permissions:
   contents: write
@@ -17,13 +16,16 @@ jobs:
       - name: Checkout .github repo
         uses: actions/checkout@v4
 
+      - name: Log input
+        run: echo "Payload: ${{ toJson(github.event.client_payload) }}"
+
       - name: Create workflow in new repo
         env:
           GH_TOKEN: ${{ secrets.GH_ORG_ADMIN_TOKEN }}
-          NEW_REPO: ${{ github.event.repository.name }}
-          ORG: ${{ github.organization }}
+          NEW_REPO: ${{ github.event.client_payload.repository.name }}
+          ORG: ${{ github.repository_owner }}
         run: |
-          echo "Repo nuevo: $NEW_REPO"
+          echo "Repo nuevo detectado: $NEW_REPO"
 
           FILE_PATH=".github/workflows/use-org-trivy.yml"
 
