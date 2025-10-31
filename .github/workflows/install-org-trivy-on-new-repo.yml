@@ -16,10 +16,12 @@ jobs:
       - name: Checkout .github repo
         uses: actions/checkout@v4
 
-      - name: Log input
-        run: echo "Payload: ${{ toJson(github.event.client_payload) }}"
+      - name: Mostrar payload recibido
+        run: |
+          echo "Payload recibido:"
+          echo "${{ toJson(github.event.client_payload) }}"
 
-      - name: Create workflow in new repo
+      - name: Crear workflow en el repo nuevo
         env:
           GH_TOKEN: ${{ secrets.GH_ORG_ADMIN_TOKEN }}
           NEW_REPO: ${{ github.event.client_payload.repository.name }}
@@ -29,20 +31,24 @@ jobs:
 
           FILE_PATH=".github/workflows/use-org-trivy.yml"
 
-          cat > tmp.yml << 'EOF'
-name: Org Trivy Scan
+          echo "Creando contenido del workflow Trivy…"
 
+          # Creamos el contenido como un string plano (no YAML que se parsee)
+          WORKFLOW_CONTENT='name: Org Trivy Scan
 on:
   pull_request:
   push:
-
 jobs:
   call-trivy:
     uses: nubax-ar/.github/.github/workflows/trivy-repo-scan.yml@main
-EOF
+'
 
+          # Codificamos en base64
+          ENCODED_CONTENT=$(printf "%s" "$WORKFLOW_CONTENT" | base64 | tr -d '\n')
+
+          # Subimos el archivo al nuevo repo
           gh api \
             repos/$ORG/$NEW_REPO/contents/$FILE_PATH \
             -X PUT \
             -f message="Instalar workflow de seguridad Trivy org-wide" \
-            -f content="$(base64 -w0 < tmp.yml)"
+            -f content="$ENCODED_CONTENT"
