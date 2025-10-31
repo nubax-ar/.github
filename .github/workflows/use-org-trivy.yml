@@ -6,4 +6,4 @@ on:
 
 jobs:
   call-trivy:
-    uses: nubax-ar/.github/workflows/trivy-repo-scan.yml
+    uses: nubax-ar/.github/.github/workflows/trivy-repo-scan.yml@main
