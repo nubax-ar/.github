@@ -1,0 +1,46 @@
+name: Install Org Trivy Workflow on New Repo
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+  organization:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  add-workflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout .github repo
+        uses: actions/checkout@v4
+
+      - name: Create workflow in new repo
+        env:
+          GH_TOKEN: ${{ secrets.GH_ORG_ADMIN_TOKEN }}
+          NEW_REPO: ${{ github.event.repository.name }}
+          ORG: ${{ github.organization }}
+        run: |
+          echo "Repo nuevo: $NEW_REPO"
+
+          FILE_PATH=".github/workflows/use-org-trivy.yml"
+
+          cat > tmp.yml << 'EOF'
+name: Org Trivy Scan
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  call-trivy:
+    uses: nubax-ar/.github/.github/workflows/trivy-repo-scan.yml@main
+EOF
+
+          gh api \
+            repos/$ORG/$NEW_REPO/contents/$FILE_PATH \
+            -X PUT \
+            -f message="Instalar workflow de seguridad Trivy org-wide" \
+            -f content="$(base64 -w0 < tmp.yml)"
